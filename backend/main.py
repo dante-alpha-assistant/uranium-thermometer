@@ -72,10 +72,60 @@ def get_thermometer():
             ura = t
             break
     
+    # Compute verdict
+    verdict = None
+    if ura:
+        score = ura.get("signal_score", 50)
+        zone_pct = ura.get("zone_pct", 50)
+        rsi = ura.get("rsi")
+        price = ura.get("current_price", 0)
+        range_low = ura.get("range_low", 0)
+        range_high = ura.get("range_high", 0)
+        
+        # Count how many tickers agree on direction
+        bullish_count = sum(1 for t in tickers if (t.get("signal_score") or 50) >= 55)
+        bearish_count = sum(1 for t in tickers if (t.get("signal_score") or 50) <= 40)
+        total = len(tickers) or 1
+        
+        if score >= 70:
+            action = "ACCUMULATE"
+            detail = f"Below ${range_low + (range_high - range_low) * 0.3:.0f} — strong buy zone. Multiple indicators oversold."
+        elif score >= 55:
+            action = "BUY"
+            detail = f"Favorable entry zone. Price at ${price:.2f} with room to run."
+        elif score >= 45:
+            action = "HOLD"
+            detail = f"Neutral territory at ${price:.2f}. Wait for a dip below ${range_low + (range_high - range_low) * 0.3:.0f} to add."
+        elif score >= 30:
+            action = "REDUCE"
+            detail = f"Extended at ${price:.2f}. Consider trimming near ${range_high:.0f}."
+        else:
+            action = "SELL"
+            detail = f"Overbought at ${price:.2f}. Take profits and wait for reset."
+        
+        # Conviction based on agreement across indicators and tickers
+        if bullish_count >= total * 0.6 or bearish_count >= total * 0.6:
+            conviction = "HIGH"
+        elif bullish_count >= total * 0.4 or bearish_count >= total * 0.4:
+            conviction = "MEDIUM"
+        else:
+            conviction = "LOW"
+        
+        verdict = {
+            "action": action,
+            "detail": detail,
+            "conviction": conviction,
+            "composite_score": round(score, 1),
+            "bullish_tickers": bullish_count,
+            "bearish_tickers": bearish_count,
+            "total_tickers": total,
+        }
+    
     return {
         "ura": ura,
         "tickers": tickers,
         "spot_uranium": spot,
+        "verdict": verdict,
         "last_updated": datetime.utcnow().isoformat(),
         "methodology": {
             "zone_classification": {

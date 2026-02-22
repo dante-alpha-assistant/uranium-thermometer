@@ -74,54 +74,78 @@ def compute_signal_score(zone: str, zone_pct: float, rsi: float, macd: float,
                           macd_signal: float, price: float, bb_lower: float, 
                           bb_upper: float, sma_50: float, sma_200: float) -> tuple[float, str]:
     """
-    Compute 0-100 signal score.
-    Higher = stronger BUY signal, Lower = stronger SELL signal.
+    Compute 0-100 signal score. Continuous, not bucketed.
+    Higher = stronger BUY signal (price cheap, oversold, momentum turning up).
+    Lower = stronger SELL signal (price expensive, overbought, momentum fading).
+    
+    Weights: Range position 40%, RSI 25%, MACD 15%, Bollinger 10%, SMA 10%
     """
-    score = 50.0  # neutral start
+    components = []
     
-    # Zone contribution (±25 pts)
-    if zone == "GREEN":
-        score += 25 * (1 - zone_pct / 20)
-    elif zone == "RED":
-        score -= 25 * ((zone_pct - 80) / 20)
+    # 1. Range position (40% weight) — continuous linear mapping
+    # zone_pct 0 = bottom of range (max buy), 100 = top of range (max sell)
+    range_score = 100 - zone_pct  # invert: low position = high score
+    components.append(('range', range_score, 0.40))
     
-    # RSI contribution (±15 pts)
-    if rsi and not np.isnan(rsi):
-        if rsi < 30:
-            score += 15 * (30 - rsi) / 30
-        elif rsi > 70:
-            score -= 15 * (rsi - 70) / 30
+    # 2. RSI (25% weight) — continuous
+    if rsi is not None and not np.isnan(rsi):
+        # RSI 0-30 → score 100-70 (oversold = buy), 30-50 → 70-50, 50-70 → 50-30, 70-100 → 30-0
+        rsi_score = 100 - rsi  # invert: low RSI = high score
+        components.append(('rsi', rsi_score, 0.25))
     
-    # MACD contribution (±10 pts)
-    if macd and macd_signal and not (np.isnan(macd) or np.isnan(macd_signal)):
-        if macd > macd_signal:
-            score += 10
-        else:
-            score -= 10
+    # 3. MACD (15% weight) — distance from signal line, normalized
+    if macd is not None and macd_signal is not None and not (np.isnan(macd) or np.isnan(macd_signal)):
+        macd_diff = macd - macd_signal
+        # Normalize: clip to reasonable range and map to 0-100
+        # Positive diff (bullish crossover) → higher score
+        macd_norm = max(-2, min(2, macd_diff))  # clip
+        macd_score = 50 + (macd_norm / 2) * 50  # map -2..2 → 0..100
+        components.append(('macd', macd_score, 0.15))
     
-    # Bollinger contribution (±10 pts)
-    if bb_lower and bb_upper and not (np.isnan(bb_lower) or np.isnan(bb_upper)):
-        if price <= bb_lower:
-            score += 10
-        elif price >= bb_upper:
-            score -= 10
+    # 4. Bollinger position (10% weight) — where price sits in BB range
+    if bb_lower is not None and bb_upper is not None and not (np.isnan(bb_lower) or np.isnan(bb_upper)):
+        bb_range = bb_upper - bb_lower
+        if bb_range > 0:
+            bb_pct = (price - bb_lower) / bb_range * 100
+            bb_score = 100 - max(0, min(100, bb_pct))  # invert: near lower band = buy
+            components.append(('bb', bb_score, 0.10))
     
-    # SMA contribution (±10 pts) - golden/death cross concept
-    if sma_50 and sma_200 and not (np.isnan(sma_50) or np.isnan(sma_200)):
+    # 5. SMA trend (10% weight) — price vs SMA50, SMA50 vs SMA200
+    if sma_50 is not None and sma_200 is not None and not (np.isnan(sma_50) or np.isnan(sma_200)):
+        sma_score = 50.0
+        # Golden cross bonus
         if sma_50 > sma_200:
-            score += 5  # golden cross territory
+            sma_score += 15
         else:
-            score -= 5
-        if price > sma_50:
-            score += 5
-        else:
-            score -= 5
+            sma_score -= 15
+        # Price relative to SMA50
+        if price and sma_50 > 0:
+            price_vs_sma = (price / sma_50 - 1) * 100  # % above/below
+            # Above SMA50 = bullish momentum, but also means less upside
+            # Use moderate penalty: slightly above is good, way above is extended
+            if price_vs_sma > 10:
+                sma_score -= 10  # extended
+            elif price_vs_sma > 0:
+                sma_score += 10  # healthy uptrend
+            elif price_vs_sma < -10:
+                sma_score += 15  # deeply below, potential buy
+            else:
+                sma_score += 5  # slightly below
+        sma_score = max(0, min(100, sma_score))
+        components.append(('sma', sma_score, 0.10))
     
+    # Weighted average
+    if not components:
+        return 50.0, "HOLD"
+    
+    total_weight = sum(w for _, _, w in components)
+    score = sum(s * w for _, s, w in components) / total_weight
     score = max(0, min(100, score))
     
-    if score >= 70:
+    # Labels with conviction
+    if score >= 75:
         label = "STRONG BUY"
-    elif score >= 55:
+    elif score >= 60:
         label = "BUY"
     elif score >= 45:
         label = "HOLD"

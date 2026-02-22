@@ -6,6 +6,7 @@ import NewsFeed from './components/NewsFeed'
 import TickerDetail from './components/TickerDetail'
 import Methodology from './components/Methodology'
 import ScoreHistory from './components/ScoreHistory'
+import Verdict from './components/Verdict'
 import { Activity, RefreshCw, Atom } from 'lucide-react'
 
 function App() {
@@ -100,6 +101,9 @@ function App() {
         {selectedTicker && (
           <TickerDetail symbol={selectedTicker} onClose={() => setSelectedTicker(null)} />
         )}
+
+        {/* Verdict */}
+        <Verdict verdict={data?.verdict} />
 
         {/* Hero: Thermometer + Signal Panel */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
