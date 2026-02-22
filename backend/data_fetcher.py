@@ -22,12 +22,22 @@ SENTIMENT_BULLISH = [
     "approve", "approval", "restart", "extend", "new build", "contract", "award",
     "bullish", "surge", "rally", "demand", "shortage", "deficit", "upside",
     "record", "milestone", "breakout", "AI", "data center", "power purchase",
-    "SMR", "small modular", "positive", "upgrade", "buy",
+    "SMR", "small modular", "positive", "upgrade", "buy", "jump", "soar",
+    "licence", "license", "permit", "reboot", "renaissance", "partner",
+    "nuclear energy", "reactor", "enrichment", "fuel", "yellowcake",
+    "construction", "investment", "grow", "growth", "expand", "expansion",
+    "deal", "agreement", "sign", "commit", "fund", "funding",
+    "Nvidia", "Microsoft", "Google", "Amazon", "hyperscale", "power demand",
+    "grid", "electricity", "baseload", "clean energy", "zero carbon",
+    "strategic reserve", "stockpile", "national security",
 ]
 SENTIMENT_BEARISH = [
     "shut down", "shutdown", "cancel", "delay", "bearish", "decline", "sell",
     "oversupply", "surplus", "downgrade", "risk", "accident", "leak",
-    "protest", "ban", "moratorium", "negative", "concern",
+    "protest", "ban", "moratorium", "negative", "concern", "fall", "drop",
+    "plunge", "crash", "warning", "investigation", "violation", "fine",
+    "contamination", "waste", "opposition", "halt", "suspend", "suspend",
+    "fraud", "lawsuit", "penalty", "overvalued", "bubble",
 ]
 
 CATEGORIES = {
@@ -149,6 +159,105 @@ def fetch_news():
     if articles:
         save_news(articles)
     return articles
+
+
+MACRO_TICKERS = {
+    "^TNX": "US 10Y Treasury Yield",
+    "DX-Y.NYB": "US Dollar Index (DXY)",
+    "^GSPC": "S&P 500",
+}
+
+
+def fetch_macro_regime():
+    """Fetch macro indicators and classify regime for uranium."""
+    results = {}
+    for symbol, name in MACRO_TICKERS.items():
+        try:
+            tk = yf.Ticker(symbol)
+            df = tk.history(period="6mo", auto_adjust=True)
+            if df.empty:
+                continue
+            current = float(df["Close"].iloc[-1])
+            p25 = float(df["Close"].quantile(0.25))
+            p75 = float(df["Close"].quantile(0.75))
+            p50 = float(df["Close"].median())
+            pct_rank = float((df["Close"] <= current).mean() * 100)
+            
+            # Classify signal for each indicator
+            if symbol == "^TNX":
+                # Lower yields = commodity tailwind
+                if current <= p25:
+                    signal = "TAILWIND"
+                elif current >= p75:
+                    signal = "HEADWIND"
+                else:
+                    signal = "NEUTRAL"
+            elif symbol == "DX-Y.NYB":
+                # Weaker dollar = commodity tailwind
+                if current <= p25:
+                    signal = "TAILWIND"
+                elif current >= p75:
+                    signal = "HEADWIND"
+                else:
+                    signal = "NEUTRAL"
+            else:  # SPX
+                # Strong equities = risk-on = commodity tailwind
+                if current >= p75:
+                    signal = "TAILWIND"
+                elif current <= p25:
+                    signal = "HEADWIND"
+                else:
+                    signal = "NEUTRAL"
+            
+            results[symbol] = {
+                "name": name,
+                "current": round(current, 2),
+                "p25": round(p25, 2),
+                "p50": round(p50, 2),
+                "p75": round(p75, 2),
+                "percentile_rank": round(pct_rank, 1),
+                "signal": signal,
+            }
+        except Exception as e:
+            print(f"Error fetching macro {symbol}: {e}")
+    
+    # Aggregate regime
+    signals = [v["signal"] for v in results.values()]
+    tailwinds = signals.count("TAILWIND")
+    headwinds = signals.count("HEADWIND")
+    
+    if tailwinds >= 2:
+        regime = "FAVORABLE"
+        score = 70 + tailwinds * 10
+    elif headwinds >= 2:
+        regime = "HOSTILE"
+        score = 30 - headwinds * 10
+    else:
+        regime = "NEUTRAL"
+        score = 50
+    
+    # Build interpretation
+    parts = []
+    tnx = results.get("^TNX", {})
+    dxy = results.get("DX-Y.NYB", {})
+    spx = results.get("^GSPC", {})
+    if tnx:
+        parts.append(f"10Y yield at {tnx['current']}% ({tnx['signal'].lower()})")
+    if dxy:
+        parts.append(f"DXY at {dxy['current']} ({dxy['signal'].lower()})")
+    if spx:
+        parts.append(f"S&P at {spx['current']:.0f} ({spx['signal'].lower()})")
+    
+    interpretation = ". ".join(parts) + "." if parts else "Insufficient data."
+    
+    return {
+        "regime": regime,
+        "score": max(0, min(100, score)),
+        "indicators": results,
+        "interpretation": interpretation,
+        "tailwinds": tailwinds,
+        "headwinds": headwinds,
+    }
 
 
 def fetch_spot_uranium():

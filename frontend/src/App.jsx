@@ -7,6 +7,7 @@ import TickerDetail from './components/TickerDetail'
 import Methodology from './components/Methodology'
 import ScoreHistory from './components/ScoreHistory'
 import Verdict from './components/Verdict'
+import MacroRegime from './components/MacroRegime'
 import { Activity, RefreshCw, Atom } from 'lucide-react'
 
 function App() {
@@ -105,10 +106,11 @@ function App() {
         {/* Verdict */}
         <Verdict verdict={data?.verdict} />
 
-        {/* Hero: Thermometer + Signal Panel */}
+        {/* Hero: Thermometer + Macro + Signal Panel */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 space-y-6">
             <Thermometer ura={data?.ura} />
+            <MacroRegime />
           </div>
           <div>
             <SignalPanel signals={signals?.signals} />

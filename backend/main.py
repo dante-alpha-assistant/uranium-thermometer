@@ -10,7 +10,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from apscheduler.schedulers.background import BackgroundScheduler
 
 from database import init_db, get_all_ticker_meta, get_ticker_meta, get_news, get_prices, get_spot_uranium, get_score_history
-from data_fetcher import refresh_all_tickers, fetch_news, fetch_spot_uranium
+from data_fetcher import refresh_all_tickers, fetch_news, fetch_spot_uranium, fetch_macro_regime
 from analysis import TICKERS
 
 
@@ -207,6 +207,12 @@ def get_signals():
     # Sort by signal score descending (best buys first)
     signals.sort(key=lambda x: x.get("signal_score") or 0, reverse=True)
     return {"signals": signals}
+
+
+@app.get("/api/macro-regime")
+def get_macro_regime():
+    """Macro environment regime for uranium investing."""
+    return fetch_macro_regime()
 
 
 @app.get("/api/score-history/{symbol}")
