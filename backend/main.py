@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from database import init_db, get_all_ticker_meta, get_ticker_meta, get_news, get_prices, get_spot_uranium
+from database import init_db, get_all_ticker_meta, get_ticker_meta, get_news, get_prices, get_spot_uranium, get_score_history
 from data_fetcher import refresh_all_tickers, fetch_news, fetch_spot_uranium
 from analysis import TICKERS
 
@@ -157,6 +157,14 @@ def get_signals():
     # Sort by signal score descending (best buys first)
     signals.sort(key=lambda x: x.get("signal_score") or 0, reverse=True)
     return {"signals": signals}
+
+
+@app.get("/api/score-history/{symbol}")
+def get_score_hist(symbol: str, days: int = Query(30, ge=1, le=90)):
+    """Score history for a ticker over time."""
+    symbol = symbol.upper()
+    history = get_score_history(symbol, days=days)
+    return {"symbol": symbol, "history": history, "count": len(history)}
 
 
 @app.get("/api/refresh")

@@ -5,6 +5,7 @@ import SignalPanel from './components/SignalPanel'
 import NewsFeed from './components/NewsFeed'
 import TickerDetail from './components/TickerDetail'
 import Methodology from './components/Methodology'
+import ScoreHistory from './components/ScoreHistory'
 import { Activity, RefreshCw, Atom } from 'lucide-react'
 
 function App() {
@@ -112,6 +113,9 @@ function App() {
 
         {/* Ticker Grid */}
         <TickerGrid tickers={data?.tickers} onSelect={setSelectedTicker} />
+
+        {/* Score History */}
+        <ScoreHistory symbol="URA" />
 
         {/* News Feed */}
         <NewsFeed news={news?.articles} />

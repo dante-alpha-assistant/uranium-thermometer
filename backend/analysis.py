@@ -141,14 +141,15 @@ def analyze_ticker(symbol: str, df: pd.DataFrame) -> dict:
     close = df["close"]
     price = close.iloc[-1]
     
-    # 6-month range
-    range_low = float(df["low"].min())
-    range_high = float(df["high"].max())
+    # 6-month range (context)
+    six_mo = df.tail(126)
+    range_low_6m = float(six_mo["low"].min()) if len(six_mo) > 0 else float(df["low"].min())
+    range_high_6m = float(six_mo["high"].max()) if len(six_mo) > 0 else float(df["high"].max())
     
-    # 3-month range for tighter view
+    # 3-month range (primary for zone classification — more tactical)
     three_mo = df.tail(63)
-    range_low_3m = float(three_mo["low"].min())
-    range_high_3m = float(three_mo["high"].max())
+    range_low = float(three_mo["low"].min()) if len(three_mo) > 0 else range_low_6m
+    range_high = float(three_mo["high"].max()) if len(three_mo) > 0 else range_high_6m
     
     zone, zone_pct = classify_zone(price, range_low, range_high)
     
@@ -186,8 +187,8 @@ def analyze_ticker(symbol: str, df: pd.DataFrame) -> dict:
         "change_pct": change_pct,
         "range_low": round(range_low, 2),
         "range_high": round(range_high, 2),
-        "range_low_3m": round(range_low_3m, 2),
-        "range_high_3m": round(range_high_3m, 2),
+        "range_low_3m": round(range_low, 2),
+        "range_high_3m": round(range_high, 2),
         "zone": zone,
         "zone_pct": zone_pct,
         "signal_score": signal_score,
@@ -203,7 +204,7 @@ def analyze_ticker(symbol: str, df: pd.DataFrame) -> dict:
         "support": support,
         "resistance": resistance,
         "extra": {
-            "range_low_3m": round(range_low_3m, 2),
-            "range_high_3m": round(range_high_3m, 2),
+            "range_low_6m": round(range_low_6m, 2),
+            "range_high_6m": round(range_high_6m, 2),
         },
     }

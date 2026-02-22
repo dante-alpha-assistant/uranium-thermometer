@@ -63,6 +63,16 @@ def init_db():
             price REAL,
             source TEXT
         );
+        CREATE TABLE IF NOT EXISTS score_history (
+            symbol TEXT NOT NULL,
+            timestamp TEXT NOT NULL,
+            price REAL,
+            signal_score REAL,
+            zone TEXT,
+            zone_pct REAL,
+            rsi REAL,
+            PRIMARY KEY (symbol, timestamp)
+        );
     """)
     conn.commit()
     conn.close()
@@ -168,6 +178,29 @@ def save_spot_uranium(price: float, source: str):
     )
     conn.commit()
     conn.close()
+
+
+def save_score_snapshot(data: dict):
+    conn = get_db()
+    ts = datetime.utcnow().strftime("%Y-%m-%dT%H:00")  # hourly granularity
+    conn.execute(
+        "INSERT OR REPLACE INTO score_history VALUES (?,?,?,?,?,?,?)",
+        (data["symbol"], ts, data.get("current_price"), data.get("signal_score"),
+         data.get("zone"), data.get("zone_pct"), data.get("rsi")),
+    )
+    conn.commit()
+    conn.close()
+
+
+def get_score_history(symbol: str, days: int = 30) -> list[dict]:
+    conn = get_db()
+    cutoff = (datetime.utcnow() - timedelta(days=days)).strftime("%Y-%m-%dT%H:%M")
+    rows = conn.execute(
+        "SELECT * FROM score_history WHERE symbol=? AND timestamp>=? ORDER BY timestamp",
+        (symbol, cutoff),
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
 
 
 def get_spot_uranium() -> dict | None:

@@ -9,7 +9,7 @@ from bs4 import BeautifulSoup
 
 from analysis import TICKERS, analyze_ticker
 from database import (
-    save_prices, get_prices, save_ticker_meta, save_news, save_spot_uranium
+    save_prices, get_prices, save_ticker_meta, save_news, save_spot_uranium, save_score_snapshot
 )
 
 URANIUM_RSS_FEEDS = [
@@ -81,6 +81,7 @@ def refresh_all_tickers():
         result = analyze_ticker(symbol, df)
         if "error" not in result:
             save_ticker_meta(result)
+            save_score_snapshot(result)
             results.append(result)
     
     return results
