@@ -197,6 +197,44 @@ def get_thermometer():
         else:
             conviction = "LOW"
         
+        # --- Macro regime adjustment ---
+        try:
+            macro = fetch_macro_regime()
+            macro_regime = macro.get("regime", "NEUTRAL")
+        except Exception:
+            macro_regime = "NEUTRAL"
+
+        # Shift conviction based on macro regime
+        conviction_levels = ["LOW", "MEDIUM", "HIGH"]
+        conv_idx = conviction_levels.index(conviction)
+        if macro_regime == "HOSTILE":
+            # Hostile macro = less conviction in bullish signals, more in bearish
+            if action in ("BUY", "ACCUMULATE"):
+                conv_idx = max(0, conv_idx - 1)
+            elif action in ("SELL", "REDUCE"):
+                conv_idx = min(2, conv_idx + 1)
+        elif macro_regime == "FAVORABLE":
+            if action in ("BUY", "ACCUMULATE"):
+                conv_idx = min(2, conv_idx + 1)
+            elif action in ("SELL", "REDUCE"):
+                conv_idx = max(0, conv_idx - 1)
+        conviction = conviction_levels[conv_idx]
+
+        # --- News sentiment aggregate ---
+        try:
+            articles = get_news(limit=50)
+            bullish_news = sum(1 for a in articles if a.get("sentiment") == "bullish")
+            bearish_news = sum(1 for a in articles if a.get("sentiment") == "bearish")
+            total_news = len(articles) or 1
+            if bullish_news / total_news >= 0.6:
+                news_sentiment = "BULLISH"
+            elif bearish_news / total_news >= 0.6:
+                news_sentiment = "BEARISH"
+            else:
+                news_sentiment = "MIXED"
+        except Exception:
+            bullish_news, bearish_news, news_sentiment = 0, 0, "UNKNOWN"
+
         verdict = {
             "action": action,
             "detail": detail,
@@ -205,6 +243,10 @@ def get_thermometer():
             "bullish_tickers": bullish_count,
             "bearish_tickers": bearish_count,
             "total_tickers": total,
+            "macro_regime": macro_regime,
+            "news_sentiment": news_sentiment,
+            "news_bullish": bullish_news,
+            "news_bearish": bearish_news,
         }
     
     return {

@@ -36,11 +36,33 @@ export default function Verdict({ verdict }) {
         </div>
       </div>
       <p className="text-gray-300 text-sm">{verdict.detail}</p>
-      <div className="mt-3 flex gap-4 text-xs text-gray-500">
+      <div className="mt-3 flex flex-wrap gap-4 text-xs text-gray-500">
         <span>Score: <span className="font-mono text-gray-300">{verdict.composite_score}/100</span></span>
         <span>Bullish: <span className="font-mono text-green-400">{verdict.bullish_tickers}/{verdict.total_tickers}</span></span>
         <span>Bearish: <span className="font-mono text-red-400">{verdict.bearish_tickers}/{verdict.total_tickers}</span></span>
+        {verdict.macro_regime && (
+          <span>Macro: <span className={`font-mono ${verdict.macro_regime === 'FAVORABLE' ? 'text-emerald-400' : verdict.macro_regime === 'HOSTILE' ? 'text-red-400' : 'text-yellow-400'}`}>{verdict.macro_regime}</span></span>
+        )}
+        {verdict.news_sentiment && (
+          <span>News: <span className={`font-mono ${verdict.news_sentiment === 'BULLISH' ? 'text-emerald-400' : verdict.news_sentiment === 'BEARISH' ? 'text-red-400' : 'text-yellow-400'}`}>{verdict.news_sentiment}</span>
+            <span className="text-gray-600 ml-1">({verdict.news_bullish}↑ {verdict.news_bearish}↓)</span>
+          </span>
+        )}
       </div>
+      {verdict.news_sentiment && verdict.action && (
+        (() => {
+          const technical = ['SELL', 'REDUCE'].includes(verdict.action) ? 'bearish' : ['BUY', 'ACCUMULATE'].includes(verdict.action) ? 'bullish' : 'neutral';
+          const news = verdict.news_sentiment.toLowerCase();
+          if ((technical === 'bearish' && news === 'bullish') || (technical === 'bullish' && news === 'bearish')) {
+            return (
+              <div className="mt-2 px-3 py-1.5 bg-amber-900/20 border border-amber-700/40 rounded-lg text-xs text-amber-400">
+                ⚡ <strong>Tension:</strong> Technical says <span className="uppercase">{verdict.action}</span> but news sentiment is <span className="uppercase">{verdict.news_sentiment}</span> — exercise caution
+              </div>
+            );
+          }
+          return null;
+        })()
+      )}
     </div>
   );
 }
