@@ -178,13 +178,13 @@ def get_thermometer():
             detail = f"Below ${range_low + (range_high - range_low) * 0.3:.0f} — strong buy zone. Multiple indicators oversold."
         elif score >= 55:
             action = "BUY"
-            detail = f"Favorable entry zone. Price at ${price:.2f} with room to run."
+            detail = f"Favorable entry near ${price:.2f} with room to run."
         elif score >= 45:
             action = "HOLD"
-            detail = f"Neutral territory at ${price:.2f}. Wait for a dip below ${range_low + (range_high - range_low) * 0.3:.0f} to add."
+            detail = f"Neutral at ${price:.2f}. Wait for dip below ${range_low + (range_high - range_low) * 0.3:.0f} to add."
         elif score >= 30:
             action = "REDUCE"
-            detail = f"Extended at ${price:.2f}. Consider trimming near ${range_high:.0f}."
+            detail = f"Technically extended at ${price:.2f}."
         else:
             action = "SELL"
             detail = f"Overbought at ${price:.2f}. Take profits and wait for reset."
@@ -234,6 +234,26 @@ def get_thermometer():
                 news_sentiment = "MIXED"
         except Exception:
             bullish_news, bearish_news, news_sentiment = 0, 0, "UNKNOWN"
+
+        # Enrich detail with macro + sentiment context
+        macro_text = ""
+        if macro_regime == "FAVORABLE":
+            macro_text = "Macro tailwinds support risk-on positioning."
+        elif macro_regime == "HOSTILE":
+            macro_text = "Macro headwinds urge caution."
+        else:
+            macro_text = "Macro environment is neutral."
+
+        if news_sentiment == "BULLISH" and action in ("REDUCE", "SELL"):
+            detail += f" {macro_text} Sentiment strongly bullish ({bullish_news} articles) — reduce with patience, not urgency."
+        elif news_sentiment == "BEARISH" and action in ("BUY", "ACCUMULATE"):
+            detail += f" {macro_text} Sentiment bearish ({bearish_news} articles) — accumulate cautiously, watch for catalyst."
+        elif news_sentiment == "BULLISH" and action in ("BUY", "ACCUMULATE"):
+            detail += f" {macro_text} Sentiment confirms ({bullish_news} bullish articles) — conviction is high."
+        elif news_sentiment == "BEARISH" and action in ("REDUCE", "SELL"):
+            detail += f" {macro_text} Sentiment confirms ({bearish_news} bearish articles) — exit decisively."
+        else:
+            detail += f" {macro_text}"
 
         verdict = {
             "action": action,
