@@ -1,6 +1,8 @@
 """Uranium Thermometer - FastAPI Backend."""
 import os
 import json
+import sqlite3
+import httpx
 from datetime import datetime
 from contextlib import asynccontextmanager
 
@@ -9,12 +11,95 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from database import init_db, get_all_ticker_meta, get_ticker_meta, get_news, get_prices, get_spot_uranium, get_score_history
+from database import init_db, get_all_ticker_meta, get_ticker_meta, get_news, get_prices, get_spot_uranium, get_score_history, DB_PATH
 from data_fetcher import refresh_all_tickers, fetch_news, fetch_spot_uranium, fetch_macro_regime
 from analysis import TICKERS
 
+DISCORD_CHANNEL_ID = "1471822299203371030"  # #general
+DISCORD_BOT_TOKEN = os.environ.get("DISCORD_BOT_TOKEN", "")
 
 scheduler = BackgroundScheduler()
+
+
+def _get_db():
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def _check_zone_changes():
+    """Compare current zones to stored state, fire alerts on changes."""
+    tickers = get_all_ticker_meta()
+    conn = _get_db()
+
+    # Ensure tables exist
+    conn.execute('''CREATE TABLE IF NOT EXISTS zone_state (
+        symbol TEXT PRIMARY KEY, zone TEXT, score REAL, price REAL,
+        updated TEXT DEFAULT (datetime('now')))''')
+    conn.execute('''CREATE TABLE IF NOT EXISTS zone_alerts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, symbol TEXT, old_zone TEXT,
+        new_zone TEXT, old_score REAL, new_score REAL, price REAL,
+        timestamp TEXT DEFAULT (datetime('now')))''')
+
+    for t in tickers:
+        sym = t["symbol"]
+        new_zone = t.get("zone", "YELLOW")
+        new_score = t.get("signal_score", 50)
+        price = t.get("current_price", 0)
+
+        row = conn.execute("SELECT zone, score FROM zone_state WHERE symbol=?", (sym,)).fetchone()
+        if row:
+            old_zone = row["zone"]
+            old_score = row["score"]
+            if old_zone != new_zone:
+                # Zone changed — record alert
+                conn.execute(
+                    "INSERT INTO zone_alerts (symbol, old_zone, new_zone, old_score, new_score, price) VALUES (?,?,?,?,?,?)",
+                    (sym, old_zone, new_zone, old_score, new_score, price))
+                _fire_discord_alert(sym, old_zone, new_zone, old_score, new_score, price)
+        # Update stored state
+        conn.execute(
+            "INSERT OR REPLACE INTO zone_state (symbol, zone, score, price, updated) VALUES (?,?,?,?,datetime('now'))",
+            (sym, new_zone, new_score, price))
+    conn.commit()
+    conn.close()
+
+
+def _fire_discord_alert(symbol, old_zone, new_zone, old_score, new_score, price):
+    """Send zone change alert to Discord."""
+    zone_emoji = {"GREEN": "🟢", "YELLOW": "🟡", "RED": "🔴"}
+    old_e = zone_emoji.get(old_zone, "⚪")
+    new_e = zone_emoji.get(new_zone, "⚪")
+
+    msg = (
+        f"**☢️ ZONE ALERT: {symbol}**\n"
+        f"{old_e} {old_zone} → {new_e} {new_zone}\n"
+        f"Score: {old_score:.1f} → {new_score:.1f} | Price: ${price:.2f}\n"
+    )
+
+    # Add action hint
+    if new_zone == "GREEN":
+        msg += "📈 **Entering buy zone — review position**"
+    elif new_zone == "RED":
+        msg += "📉 **Entering sell zone — consider trimming**"
+    elif old_zone == "RED" and new_zone == "YELLOW":
+        msg += "⬇️ **Cooling off from overbought**"
+    elif old_zone == "GREEN" and new_zone == "YELLOW":
+        msg += "⬆️ **Rising out of buy zone**"
+
+    if DISCORD_BOT_TOKEN:
+        try:
+            httpx.post(
+                f"https://discord.com/api/v10/channels/{DISCORD_CHANNEL_ID}/messages",
+                headers={"Authorization": f"Bot {DISCORD_BOT_TOKEN}", "Content-Type": "application/json"},
+                json={"content": msg},
+                timeout=10,
+            )
+            print(f"[ALERT] Discord sent: {symbol} {old_zone}→{new_zone}")
+        except Exception as e:
+            print(f"[ALERT] Discord send failed: {e}")
+    else:
+        print(f"[ALERT] No bot token — {symbol} {old_zone}→{new_zone}")
 
 
 def scheduled_refresh():
@@ -26,6 +111,7 @@ def scheduled_refresh():
         refresh_all_tickers()
         fetch_news()
         fetch_spot_uranium()
+        _check_zone_changes()
     elif now.minute == 0:  # Off-hours: refresh news once per hour
         print(f"[{now.isoformat()}] Scheduled refresh (off-hours, news only)")
         fetch_news()
@@ -213,6 +299,32 @@ def get_signals():
 def get_macro_regime():
     """Macro environment regime for uranium investing."""
     return fetch_macro_regime()
+
+
+@app.get("/api/alerts/history")
+def get_alert_history(limit: int = Query(20, ge=1, le=100)):
+    """Zone change alert history."""
+    conn = _get_db()
+    conn.execute('''CREATE TABLE IF NOT EXISTS zone_alerts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, symbol TEXT, old_zone TEXT,
+        new_zone TEXT, old_score REAL, new_score REAL, price REAL,
+        timestamp TEXT DEFAULT (datetime('now')))''')
+    rows = conn.execute(
+        "SELECT * FROM zone_alerts ORDER BY id DESC LIMIT ?", (limit,)
+    ).fetchall()
+    conn.close()
+    return {"alerts": [dict(r) for r in rows], "count": len(rows)}
+
+
+@app.get("/api/alerts/subscribe")
+def alert_subscribe_stub():
+    """Stub for future alert subscriptions (Telegram, email)."""
+    return {
+        "status": "planned",
+        "channels": ["discord"],
+        "planned": ["telegram", "email"],
+        "message": "Zone change alerts currently fire to Discord #general. Telegram/email coming soon."
+    }
 
 
 @app.get("/api/score-history/{symbol}")
