@@ -6,7 +6,7 @@ export default function ScoreHistory({ symbol = 'URA' }) {
   const [days, setDays] = useState(30);
 
   useEffect(() => {
-    fetch(`/api/score-history/${symbol}?days=${days}`)
+    fetch(`api/score-history/${symbol}?days=${days}`)
       .then(r => r.json())
       .then(d => setData(d.history || []))
       .catch(() => {});

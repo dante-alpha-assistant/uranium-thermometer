@@ -8,8 +8,8 @@ export default function TickerDetail({ symbol, onClose }) {
 
   useEffect(() => {
     Promise.all([
-      fetch(`/api/history/${symbol}?days=180`).then(r => r.json()),
-      fetch(`/api/ticker/${symbol}`).then(r => r.json()),
+      fetch(`api/history/${symbol}?days=180`).then(r => r.json()),
+      fetch(`api/ticker/${symbol}`).then(r => r.json()),
     ]).then(([hist, m]) => {
       setData(hist.prices || [])
       setMeta(m)

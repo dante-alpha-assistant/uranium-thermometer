@@ -19,9 +19,9 @@ function App() {
   const fetchData = async () => {
     try {
       const [therm, sig, n] = await Promise.all([
-        fetch('/api/thermometer').then(r => r.json()),
-        fetch('/api/signals').then(r => r.json()),
-        fetch('/api/news').then(r => r.json()),
+        fetch('api/thermometer').then(r => r.json()),
+        fetch('api/signals').then(r => r.json()),
+        fetch('api/news').then(r => r.json()),
       ])
       setData(therm)
       setSignals(sig)
@@ -44,7 +44,7 @@ function App() {
   const handleRefresh = async () => {
     setRefreshing(true)
     try {
-      await fetch('/api/refresh')
+      await fetch('api/refresh')
       await fetchData()
     } finally {
       setRefreshing(false)
