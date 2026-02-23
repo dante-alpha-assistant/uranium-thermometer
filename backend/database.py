@@ -73,6 +73,33 @@ def init_db():
             rsi REAL,
             PRIMARY KEY (symbol, timestamp)
         );
+        CREATE TABLE IF NOT EXISTS portfolio (
+            symbol TEXT PRIMARY KEY,
+            shares REAL DEFAULT 0,
+            avg_cost REAL DEFAULT 0,
+            last_updated TEXT
+        );
+        CREATE TABLE IF NOT EXISTS trade_journal (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT DEFAULT (datetime('now')),
+            action TEXT NOT NULL,
+            symbol TEXT NOT NULL,
+            shares REAL NOT NULL,
+            price REAL NOT NULL,
+            total REAL,
+            reasoning TEXT,
+            score_at_trade REAL,
+            zone_at_trade TEXT,
+            macro_at_trade TEXT
+        );
+        CREATE TABLE IF NOT EXISTS portfolio_snapshots (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT DEFAULT (datetime('now')),
+            total_value REAL,
+            cash REAL,
+            pnl REAL,
+            pnl_pct REAL
+        );
     """)
     conn.commit()
     conn.close()
@@ -184,9 +211,13 @@ def save_score_snapshot(data: dict):
     conn = get_db()
     ts = datetime.utcnow().strftime("%Y-%m-%dT%H:00")  # hourly granularity
     conn.execute(
-        "INSERT OR REPLACE INTO score_history VALUES (?,?,?,?,?,?,?)",
+        "INSERT OR REPLACE INTO score_history (symbol, timestamp, price, signal_score, zone, zone_pct, rsi, "
+        "macd_val, macd_sig, bb_lower, bb_upper, sma_50, sma_200) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
         (data["symbol"], ts, data.get("current_price"), data.get("signal_score"),
-         data.get("zone"), data.get("zone_pct"), data.get("rsi")),
+         data.get("zone"), data.get("zone_pct"), data.get("rsi"),
+         data.get("macd"), data.get("macd_signal"),
+         data.get("bb_lower"), data.get("bb_upper"),
+         data.get("sma_50"), data.get("sma_200")),
     )
     conn.commit()
     conn.close()

@@ -261,32 +261,44 @@ def fetch_macro_regime():
 
 
 def fetch_spot_uranium():
-    """Try to get spot uranium price from Cameco or fallback."""
+    """Get spot uranium price from Cameco (UxC data), Sprott fallback."""
+    # Primary: Cameco
     try:
-        # Use URA NAV as a proxy combined with known correlation
-        tk = yf.Ticker("URA")
-        info = tk.info
-        price = info.get("navPrice") or info.get("regularMarketPrice")
-        if price:
-            # Rough correlation: spot ≈ URA * 3.2 (approximation for display)
-            spot_approx = round(price * 3.2, 2)
-            save_spot_uranium(spot_approx, "URA-derived estimate")
-            return {"price": spot_approx, "source": "URA-derived estimate", "date": datetime.utcnow().strftime("%Y-%m-%d")}
-    except Exception as e:
-        print(f"Error fetching spot uranium: {e}")
-    
-    # Fallback: try scraping
-    try:
-        async_client = httpx.Client(timeout=10)
-        resp = async_client.get("https://tradingeconomics.com/commodity/uranium")
+        resp = httpx.get(
+            "https://www.cameco.com/invest/markets/uranium-price",
+            headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"},
+            timeout=15,
+        )
         if resp.status_code == 200:
             soup = BeautifulSoup(resp.text, "html.parser")
-            price_el = soup.select_one("#p")
-            if price_el:
-                price = float(price_el.text.strip())
-                save_spot_uranium(price, "tradingeconomics")
-                return {"price": price, "source": "tradingeconomics", "date": datetime.utcnow().strftime("%Y-%m-%d")}
-    except Exception:
-        pass
-    
+            tables = soup.select("table")
+            if tables:
+                rows = tables[0].select("tr")
+                for row in reversed(rows):
+                    cells = row.select("td")
+                    if len(cells) >= 2:
+                        try:
+                            price = float(cells[1].get_text(strip=True))
+                            save_spot_uranium(price, "Cameco (UxC)")
+                            return {"price": price, "source": "Cameco (UxC)", "date": datetime.utcnow().strftime("%Y-%m-%d")}
+                        except ValueError:
+                            continue
+    except Exception as e:
+        print(f"Cameco scrape failed: {e}")
+
+    # Fallback: Sprott
+    try:
+        t = yf.Ticker("U-UN.TO")
+        h = t.history(period="5d")
+        if not h.empty:
+            last_cad = float(h["Close"].iloc[-1])
+            fx = yf.Ticker("CADUSD=X")
+            fxh = fx.history(period="5d")
+            cad_usd = float(fxh["Close"].iloc[-1]) if not fxh.empty else 0.72
+            spot = round(last_cad * cad_usd / 0.3635, 2)
+            save_spot_uranium(spot, "Sprott U-UN.TO derived (fallback)")
+            return {"price": spot, "source": "Sprott U-UN.TO derived (fallback)", "date": datetime.utcnow().strftime("%Y-%m-%d")}
+    except Exception as e:
+        print(f"Error fetching Sprott spot: {e}")
+
     return None
