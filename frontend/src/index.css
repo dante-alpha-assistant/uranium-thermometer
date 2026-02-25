@@ -1,15 +1,18 @@
 @import "tailwindcss";
 
 :root {
-  --green: #00c853;
-  --yellow: #ffc107;
-  --red: #ff1744;
-  --bg: #0a0e17;
-  --surface: #111827;
-  --surface2: #1a2332;
-  --text: #e2e8f0;
-  --text-muted: #64748b;
-  --border: #1e293b;
+  --green: #34d399;
+  --red: #f87171;
+  --yellow: #fbbf24;
+  --bg: #141418;
+  --surface: #1c1c22;
+  --surface2: #232329;
+  --text: #fafafa;
+  --text-secondary: #a1a1aa;
+  --text-muted: #71717a;
+  --border: rgba(255, 255, 255, 0.08);
+  --accent: #818cf8;
+  --accent-dim: rgba(129, 140, 248, 0.1);
 }
 
 * { box-sizing: border-box; }
@@ -19,11 +22,14 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: var(--bg); }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.12); }
 
 .zone-green { color: var(--green); }
 .zone-yellow { color: var(--yellow); }
@@ -32,8 +38,58 @@ body {
 .bg-zone-yellow { background: var(--yellow); }
 .bg-zone-red { background: var(--red); }
 
+/* Universal card — subtle border + soft shadow */
+.u-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  transition: border-color 0.2s ease;
+}
+.u-card:hover {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* Inner stat blocks */
+.u-stat {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+}
+
+/* Responsive touch targets */
+@media (max-width: 640px) {
+  button, a { min-height: 44px; }
+  .u-card { border-radius: 12px; }
+  /* Prevent horizontal overflow */
+  table { font-size: 11px; }
+  /* Ticker switcher buttons — wrap on mobile */
+  .flex.gap-0\.5 { flex-wrap: wrap; }
+  .flex.gap-1 { flex-wrap: wrap; }
+}
+
+/* Hide desktop-only overflow content on mobile */
+@media (max-width: 480px) {
+  .recharts-wrapper { font-size: 10px !important; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 @keyframes pulse-glow {
   0%, 100% { opacity: 0.6; }
   50% { opacity: 1; }
 }
+.animate-fade-in { animation: fade-in 0.35s ease-out both; }
 .pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+
+button, a, [role="button"] { transition: all 0.15s ease; }
+table { border-collapse: separate; border-spacing: 0; }
+th { font-weight: 500; letter-spacing: 0.05em; }
+
+/* Override stale component classes */
+.bg-gray-900 { background: var(--surface) !important; }
+.border-gray-800, .border-gray-700\/30, .border-gray-700\/50 {
+  border-color: var(--border) !important;
+}
+.rounded-xl { border-radius: 16px !important; }

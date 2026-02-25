@@ -25,29 +25,29 @@ export default function CorrelationHeatmap() {
   };
 
   const getTextColor = (v) => {
-    if (v >= 0.7) return 'text-white';
+    if (v >= 0.7) return 'text-zinc-100';
     if (v < 0) return 'text-red-300';
-    return 'text-gray-300';
+    return 'text-zinc-200';
   };
 
   return (
-    <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
-      <h3 className="text-lg font-bold text-white mb-1">🔗 Correlation Matrix</h3>
-      <p className="text-xs text-gray-500 mb-4">3-month daily return correlations • {data.days} trading days</p>
+    <div className="u-card p-6">
+      <h3 className="text-sm font-semibold text-zinc-200 mb-1">🔗 Correlation Matrix</h3>
+      <p className="text-xs text-zinc-400 mb-4">3-month daily return correlations • {data.days} trading days</p>
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
           <thead>
             <tr>
               <th className="p-1"></th>
               {symbols.map(s => (
-                <th key={s} className="p-1 text-gray-400 font-mono text-center">{s.replace('.IL','')}</th>
+                <th key={s} className="p-1 text-zinc-300 font-mono text-center">{s.replace('.IL','')}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {symbols.map(s1 => (
               <tr key={s1}>
-                <td className="p-1 text-gray-400 font-mono pr-2">{s1.replace('.IL','')}</td>
+                <td className="p-1 text-zinc-300 font-mono pr-2">{s1.replace('.IL','')}</td>
                 {symbols.map(s2 => {
                   const v = matrix[s1]?.[s2] ?? 0;
                   return (

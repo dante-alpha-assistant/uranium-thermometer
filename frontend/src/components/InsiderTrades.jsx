@@ -23,17 +23,17 @@ export default function InsiderTrades() {
   const netPositive = summary.net_insider_value > 0;
 
   return (
-    <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
+    <div className="u-card p-6">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-bold text-white">🕵️ Insider Activity</h3>
+        <h3 className="text-sm font-semibold text-zinc-200">🕵️ Insider Activity</h3>
         <div className="flex gap-2">
-          <span className="text-xs font-mono px-2 py-1 rounded bg-emerald-900/30 text-emerald-400">
+          <span className="text-xs font-mono px-2 py-1 rounded bg-zinc-800/40 text-emerald-400">
             {summary.total_buys} buys
           </span>
-          <span className="text-xs font-mono px-2 py-1 rounded bg-red-900/30 text-red-400">
+          <span className="text-xs font-mono px-2 py-1 rounded bg-zinc-800/40 text-red-400">
             {summary.total_sells} sells
           </span>
-          <span className={`text-xs font-mono px-2 py-1 rounded ${netPositive ? 'bg-emerald-900/30 text-emerald-400' : 'bg-red-900/30 text-red-400'}`}>
+          <span className={`text-xs font-mono px-2 py-1 rounded ${netPositive ? 'bg-zinc-800/40 text-emerald-400/60' : 'bg-zinc-800/40 text-red-400/60'}`}>
             Net: {fmt(Math.abs(summary.net_insider_value))} {netPositive ? '↑' : '↓'}
           </span>
         </div>
@@ -41,7 +41,7 @@ export default function InsiderTrades() {
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
           <thead>
-            <tr className="text-gray-500 border-b border-gray-800">
+            <tr className="text-zinc-400 border-b border-zinc-800/50">
               <th className="text-left p-2">Date</th>
               <th className="text-left p-2">Ticker</th>
               <th className="text-left p-2">Insider</th>
@@ -54,17 +54,17 @@ export default function InsiderTrades() {
             {trades.slice(0, 15).map((t, i) => {
               const isBigBuy = t.type === 'BUY' && (t.value || 0) >= 100000;
               return (
-                <tr key={i} className={`border-b border-gray-800/50 ${isBigBuy ? 'bg-emerald-900/10' : ''}`}>
-                  <td className="p-2 text-gray-500 font-mono">{t.date?.slice(0, 10)}</td>
-                  <td className="p-2 font-mono text-gray-300">{t.symbol}</td>
-                  <td className="p-2 text-gray-400 truncate max-w-32">{t.insider}</td>
-                  <td className="p-2 text-gray-500 truncate max-w-24">{t.position}</td>
+                <tr key={i} className={`border-b border-zinc-800/50/50 ${isBigBuy ? 'bg-zinc-800/40' : ''}`}>
+                  <td className="p-2 text-zinc-400 font-mono">{t.date?.slice(0, 10)}</td>
+                  <td className="p-2 font-mono text-zinc-200">{t.symbol}</td>
+                  <td className="p-2 text-zinc-300 truncate max-w-32">{t.insider}</td>
+                  <td className="p-2 text-zinc-400 truncate max-w-24">{t.position}</td>
                   <td className="p-2 text-center">
-                    <span className={`text-xs font-mono px-1.5 py-0.5 rounded ${t.type === 'BUY' ? 'bg-emerald-900/40 text-emerald-400' : 'bg-red-900/40 text-red-400'}`}>
+                    <span className={`text-xs font-mono px-1.5 py-0.5 rounded ${t.type === 'BUY' ? 'bg-zinc-800/40 text-emerald-400/60' : 'bg-zinc-800/40 text-red-400/60'}`}>
                       {t.type}
                     </span>
                   </td>
-                  <td className={`p-2 text-right font-mono ${isBigBuy ? 'text-emerald-400 font-bold' : 'text-gray-400'}`}>
+                  <td className={`p-2 text-right font-mono ${isBigBuy ? 'text-emerald-400 font-bold' : 'text-zinc-300'}`}>
                     {fmt(t.value)}
                   </td>
                 </tr>

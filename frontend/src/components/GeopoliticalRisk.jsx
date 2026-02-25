@@ -1,62 +1,47 @@
-import { useState, useEffect } from 'react';
-
-const riskColor = { LOW: 'text-emerald-400', MEDIUM: 'text-amber-400', HIGH: 'text-orange-400', CRITICAL: 'text-red-400' };
-const riskBg = { LOW: 'bg-emerald-900/20', MEDIUM: 'bg-amber-900/20', HIGH: 'bg-orange-900/20', CRITICAL: 'bg-red-900/20' };
+import { useState, useEffect } from 'react'
 
 export default function GeopoliticalRisk() {
-  const [data, setData] = useState(null);
-  useEffect(() => { fetch('api/geopolitical-risk').then(r => r.json()).then(setData).catch(() => {}); }, []);
-  if (!data) return null;
+  const [data, setData] = useState(null)
+  useEffect(() => { fetch('api/geopolitical-risk').then(r => r.json()).then(setData).catch(() => {}) }, [])
+  if (!data) return null
 
-  const score = data.composite_risk_score;
-  const gaugeWidth = Math.min(score, 100);
+  const score = data.composite_risk_score
 
   return (
-    <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-bold text-white">🌍 Geopolitical Supply Risk</h3>
-        <span className="text-xs font-mono px-2 py-1 rounded bg-orange-900/30 text-orange-400">
-          {data.supply_at_risk_pct}% AT RISK
-        </span>
+    <div className="u-card p-6">
+      <div className="flex items-center justify-between mb-5">
+        <div>
+          <h3 className="text-sm font-semibold text-zinc-200">Geopolitical Supply Risk</h3>
+          <p className="text-[10px] text-zinc-400 mt-0.5">{data.supply_at_risk_pct}% of supply at risk</p>
+        </div>
+        <span className="text-lg font-bold font-mono text-zinc-300">{score}<span className="text-xs text-zinc-400">/100</span></span>
       </div>
 
       {/* Risk gauge */}
-      <div className="mb-4">
-        <div className="flex justify-between text-xs text-gray-500 mb-1">
-          <span>Low Risk</span>
-          <span className="font-mono font-bold text-orange-400">{score}/100</span>
-          <span>Critical</span>
-        </div>
-        <div className="h-3 bg-gray-800 rounded-full overflow-hidden">
-          <div className="h-full rounded-full transition-all" style={{
-            width: `${gaugeWidth}%`,
-            background: score > 60 ? 'linear-gradient(90deg, #f59e0b, #ef4444)' :
-                        score > 40 ? 'linear-gradient(90deg, #10b981, #f59e0b)' :
-                        '#10b981'
-          }} />
+      <div className="mb-5">
+        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.04)' }}>
+          <div className="h-full rounded-full transition-all" style={{ width: `${Math.min(score, 100)}%`, background: 'var(--accent)', opacity: 0.4 }} />
         </div>
       </div>
 
       {/* Country profiles */}
-      <div className="space-y-2 mb-3">
+      <div className="space-y-3">
         {data.profiles.map(p => (
-          <div key={p.country} className={`rounded-lg p-2.5 ${riskBg[p.risk]}`}>
-            <div className="flex items-center justify-between mb-1">
-              <div className="flex items-center gap-2">
-                <span className="text-lg">{p.flag}</span>
-                <span className="text-sm font-bold text-white">{p.country}</span>
-                <span className="text-xs text-gray-500">{p.supply_pct}% supply</span>
+          <div key={p.country} className="flex items-start gap-3">
+            <span className="text-base mt-0.5">{p.flag}</span>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-0.5">
+                <span className="text-sm font-semibold text-zinc-200">{p.country}</span>
+                <span className="text-[10px] font-mono text-zinc-500">{p.supply_pct}% supply</span>
+                <span className="text-[10px] font-mono text-zinc-600 ml-auto">{p.risk}</span>
               </div>
-              <span className={`text-xs font-mono font-bold ${riskColor[p.risk]}`}>{p.risk}</span>
+              <p className="text-xs text-zinc-500 leading-relaxed">{p.factors[0]}</p>
             </div>
-            <p className="text-xs text-gray-400 mb-1">{p.factors[0]}</p>
-            <p className="text-xs text-gray-600">📌 {p.last_event}</p>
           </div>
         ))}
       </div>
 
-      <p className="text-xs text-gray-500">{data.signal}</p>
-      <p className="text-xs text-gray-600 mt-1">{data.note}</p>
+      {data.signal && <p className="text-xs text-zinc-500 mt-4 leading-relaxed">{data.signal}</p>}
     </div>
-  );
+  )
 }

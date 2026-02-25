@@ -13,7 +13,7 @@ export default function SwingOptimize() {
       .catch(() => setLoading(false));
   };
 
-  const tickers = ['URA', 'CCJ', 'UEC', 'UUUU', 'DNN', 'NXE'];
+  const tickers = ['URA', 'CCJ', 'UEC', 'UUUU', 'DNN', 'NXE', 'OKLO', 'LEU', 'PDN.AX', 'U-UN.TO'];
 
   const cellColor = (v) => {
     if (v >= 10) return 'bg-emerald-600 text-white';

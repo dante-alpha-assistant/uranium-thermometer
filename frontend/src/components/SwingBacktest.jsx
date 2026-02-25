@@ -16,7 +16,7 @@ export default function SwingBacktest() {
 
   useEffect(() => { runBacktest(); }, []);
 
-  const tickers = ['URA', 'CCJ', 'UEC', 'UUUU', 'DNN', 'NXE'];
+  const tickers = ['URA', 'CCJ', 'UEC', 'UUUU', 'DNN', 'NXE', 'OKLO', 'LEU', 'PDN.AX', 'U-UN.TO'];
 
   return (
     <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">

@@ -1,16 +1,16 @@
 import { useState, useEffect } from 'react';
 
 const typeStyle = {
-  bearish: 'bg-red-900/30 border-red-800/50 text-red-400',
-  bullish: 'bg-emerald-900/30 border-emerald-800/50 text-emerald-400',
+  bearish: 'bg-zinc-800/40 border-red-800/50 text-red-400/60',
+  bullish: 'bg-zinc-800/40 border-emerald-800/50 text-emerald-400/60',
 };
 const indIcon = { RSI: '📈', MACD: '📊', Volume: '📉' };
 const compStyle = {
-  'BEARISH DIVERGENCE': 'text-red-400',
-  'BULLISH DIVERGENCE': 'text-emerald-400',
+  'BEARISH DIVERGENCE': 'text-red-400/60',
+  'BULLISH DIVERGENCE': 'text-emerald-400/60',
   'MILD BEARISH': 'text-red-400/70',
   'MILD BULLISH': 'text-emerald-400/70',
-  'NO DIVERGENCE': 'text-gray-500',
+  'NO DIVERGENCE': 'text-zinc-400',
 };
 
 export default function Divergences() {
@@ -22,14 +22,14 @@ export default function Divergences() {
   const inactive = data.tickers?.filter(t => !t.has_divergence) || [];
 
   return (
-    <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
+    <div className="u-card p-6">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-bold text-white">⚡ Divergence Scanner</h3>
-        <span className={`text-sm font-mono font-bold ${compStyle[data.composite_signal] || 'text-gray-500'}`}>
+        <h3 className="text-sm font-semibold text-zinc-200">⚡ Divergence Scanner</h3>
+        <span className={`text-sm font-mono font-bold ${compStyle[data.composite_signal] || 'text-zinc-400'}`}>
           {data.composite_signal}
         </span>
       </div>
-      <p className="text-xs text-gray-500 mb-4">{data.composite_detail}</p>
+      <p className="text-xs text-zinc-400 mb-4">{data.composite_detail}</p>
 
       {active.length > 0 && (
         <div className="space-y-2 mb-4">
@@ -55,7 +55,7 @@ export default function Divergences() {
       {inactive.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {inactive.map(t => (
-            <span key={t.symbol} className="text-xs font-mono px-2 py-1 rounded bg-gray-800/50 text-gray-600">
+            <span key={t.symbol} className="text-xs font-mono px-2 py-1 rounded bg-zinc-800/30 text-zinc-500">
               {t.symbol} ✓
             </span>
           ))}

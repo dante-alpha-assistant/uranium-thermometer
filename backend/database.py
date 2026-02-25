@@ -73,6 +73,19 @@ def init_db():
             rsi REAL,
             PRIMARY KEY (symbol, timestamp)
         );
+        CREATE TABLE IF NOT EXISTS composite_score_history (
+            date TEXT NOT NULL,
+            symbol TEXT NOT NULL,
+            price REAL,
+            total_score REAL,
+            technical_score REAL,
+            macro_score REAL,
+            fundamental_score REAL,
+            sentiment_score REAL,
+            label TEXT,
+            components_json TEXT,
+            PRIMARY KEY (date, symbol)
+        );
         CREATE TABLE IF NOT EXISTS portfolio (
             symbol TEXT PRIMARY KEY,
             shares REAL DEFAULT 0,
@@ -239,3 +252,49 @@ def get_spot_uranium() -> dict | None:
     row = conn.execute("SELECT * FROM spot_uranium ORDER BY date DESC LIMIT 1").fetchone()
     conn.close()
     return dict(row) if row else None
+
+
+def save_composite_snapshot(date: str, symbol: str, decomp: dict):
+    """Save a daily composite score snapshot."""
+    conn = get_db()
+    cats = decomp.get("categories", {})
+    conn.execute(
+        "INSERT OR REPLACE INTO composite_score_history "
+        "(date, symbol, price, total_score, technical_score, macro_score, fundamental_score, sentiment_score, label, components_json) "
+        "VALUES (?,?,?,?,?,?,?,?,?,?)",
+        (
+            date, symbol,
+            decomp.get("price"),
+            decomp.get("total_score"),
+            cats.get("technical", {}).get("score"),
+            cats.get("macro", {}).get("score"),
+            cats.get("fundamental", {}).get("score"),
+            cats.get("sentiment", {}).get("score"),
+            decomp.get("label"),
+            json.dumps(decomp.get("components", [])),
+        ),
+    )
+    conn.commit()
+    conn.close()
+
+
+def get_composite_history(symbol: str = "URA", days: int = 90) -> list[dict]:
+    """Get composite score history."""
+    conn = get_db()
+    cutoff = (datetime.utcnow() - timedelta(days=days)).strftime("%Y-%m-%d")
+    rows = conn.execute(
+        "SELECT date, symbol, price, total_score, technical_score, macro_score, "
+        "fundamental_score, sentiment_score, label, components_json "
+        "FROM composite_score_history WHERE symbol=? AND date>=? ORDER BY date",
+        (symbol, cutoff),
+    ).fetchall()
+    conn.close()
+    results = []
+    for r in rows:
+        d = dict(r)
+        try:
+            d["components"] = json.loads(d.pop("components_json", "[]"))
+        except Exception:
+            d["components"] = []
+        results.append(d)
+    return results

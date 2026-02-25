@@ -14,9 +14,9 @@ export default function ScoreHistory({ symbol = 'URA' }) {
 
   if (data.length < 2) {
     return (
-      <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
-        <h3 className="text-lg font-bold text-white mb-2">📈 Signal Score History — {symbol}</h3>
-        <p className="text-gray-500 text-sm">Accumulating data... Score history will appear after a few refresh cycles.</p>
+      <div className="u-card p-6">
+        <h3 className="text-sm font-semibold text-zinc-200 mb-2">📈 Signal Score History — {symbol}</h3>
+        <p className="text-zinc-400 text-sm">Accumulating data... Score history will appear after a few refresh cycles.</p>
       </div>
     );
   }
@@ -49,13 +49,13 @@ export default function ScoreHistory({ symbol = 'URA' }) {
   const tickInterval = Math.max(0, Math.floor(chartData.length / 6) - 1);
 
   return (
-    <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
+    <div className="u-card p-6">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-bold text-white">📈 Signal Score History — {symbol}</h3>
+        <h3 className="text-sm font-semibold text-zinc-200">📈 Signal Score History — {symbol}</h3>
         <div className="flex gap-2">
           {[7, 14, 30].map(d => (
             <button key={d} onClick={() => setDays(d)}
-              className={`px-3 py-1 rounded text-xs font-mono ${days === d ? 'bg-emerald-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}>
+              className={`px-3 py-1 rounded text-xs font-mono ${days === d ? 'bg-emerald-600 text-zinc-100' : 'bg-zinc-800 text-zinc-300 hover:bg-gray-700'}`}>
               {d}d
             </button>
           ))}

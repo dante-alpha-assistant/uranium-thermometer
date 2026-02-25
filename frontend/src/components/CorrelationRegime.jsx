@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 
 const regimeStyle = {
-  'HERD MODE': { bg: 'bg-red-900/30', text: 'text-red-400', color: '#ef4444' },
-  'CONVERGING': { bg: 'bg-amber-900/30', text: 'text-amber-400', color: '#f59e0b' },
-  'DIVERSIFIED': { bg: 'bg-emerald-900/30', text: 'text-emerald-400', color: '#10b981' },
+  'HERD MODE': { bg: 'bg-zinc-800/40', text: 'text-red-400/60', color: '#ef4444' },
+  'CONVERGING': { bg: 'bg-zinc-800/40', text: 'text-amber-400/60', color: '#f59e0b' },
+  'DIVERSIFIED': { bg: 'bg-zinc-800/40', text: 'text-emerald-400/60', color: '#10b981' },
 };
 
 export default function CorrelationRegime() {
@@ -31,9 +31,9 @@ export default function CorrelationRegime() {
   };
 
   return (
-    <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
+    <div className="u-card p-6">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-bold text-white">🔗 Correlation Regime</h3>
+        <h3 className="text-sm font-semibold text-zinc-200">🔗 Correlation Regime</h3>
         <span className={`text-xs font-mono px-2 py-1 rounded ${style.bg} ${style.text}`}>
           {data.regime}
         </span>
@@ -55,17 +55,17 @@ export default function CorrelationRegime() {
         {/* Stats */}
         <div className="flex-1 space-y-2">
           <div className="flex justify-between text-xs">
-            <span className="text-gray-500">URA-SPY Correlation</span>
-            <span className={`font-mono ${data.ura_spy_correlation < 0 ? 'text-emerald-400' : data.ura_spy_correlation > 0.6 ? 'text-red-400' : 'text-gray-300'}`}>
+            <span className="text-zinc-400">URA-SPY Correlation</span>
+            <span className={`font-mono ${data.ura_spy_correlation < 0 ? 'text-emerald-400/60' : data.ura_spy_correlation > 0.6 ? 'text-red-400/60' : 'text-zinc-200'}`}>
               {data.ura_spy_correlation.toFixed(3)}
             </span>
           </div>
           <div className="flex justify-between text-xs">
-            <span className="text-gray-500">90d Baseline CCI</span>
-            <span className="font-mono text-gray-400">{data.cci_baseline_90d.toFixed(3)}</span>
+            <span className="text-zinc-400">90d Baseline CCI</span>
+            <span className="font-mono text-zinc-300">{data.cci_baseline_90d.toFixed(3)}</span>
           </div>
           {data.decorrelation_event && (
-            <div className="bg-emerald-900/20 rounded px-2 py-1 text-xs text-emerald-400">
+            <div className="bg-zinc-800/40 rounded px-2 py-1 text-xs text-emerald-400">
               🟢 Decorrelation event — uranium diverging from S&P
             </div>
           )}
@@ -75,7 +75,7 @@ export default function CorrelationRegime() {
       {/* CCI + URA-SPY sparklines */}
       <div className="space-y-2">
         <div>
-          <p className="text-xs text-gray-600 mb-0.5">CCI (sector herding) — 90d</p>
+          <p className="text-xs text-zinc-500 mb-0.5">CCI (sector herding) — 90d</p>
           <svg width={W} height={H} className="w-full">
             {/* Threshold lines */}
             <line x1="0" y1={H * 0.3} x2={W} y2={H * 0.3} stroke="#374151" strokeWidth="0.5" strokeDasharray="2,2" />
@@ -84,7 +84,7 @@ export default function CorrelationRegime() {
           </svg>
         </div>
         <div>
-          <p className="text-xs text-gray-600 mb-0.5">URA-SPY correlation — 90d</p>
+          <p className="text-xs text-zinc-500 mb-0.5">URA-SPY correlation — 90d</p>
           <svg width={W} height={H} className="w-full">
             <line x1="0" y1={H * 0.5} x2={W} y2={H * 0.5} stroke="#374151" strokeWidth="0.5" />
             {sparkline(spyHist, 'corr', '#6366f1')}
@@ -92,7 +92,7 @@ export default function CorrelationRegime() {
         </div>
       </div>
 
-      <p className="text-xs text-gray-600 mt-2">CCI = avg pairwise correlation among 6 uranium tickers. High CCI = sector moving as one (herding). Low URA-SPY = diversification benefit intact.</p>
+      <p className="text-xs text-zinc-500 mt-2">CCI = avg pairwise correlation among 6 uranium tickers. High CCI = sector moving as one (herding). Low URA-SPY = diversification benefit intact.</p>
     </div>
   );
 }

@@ -4,6 +4,8 @@ import pandas as pd
 import httpx
 import feedparser
 import re
+import json as _json
+import os
 from datetime import datetime, timedelta
 from bs4 import BeautifulSoup
 
@@ -11,6 +13,37 @@ from analysis import TICKERS, analyze_ticker
 from database import (
     save_prices, get_prices, save_ticker_meta, save_news, save_spot_uranium, save_score_snapshot
 )
+
+# Warm cache file — persists across restarts
+_CACHE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "cache", "ticker_cache.json")
+
+
+def save_warm_cache(results: list[dict]):
+    """Save last-good ticker meta to disk for instant restarts."""
+    try:
+        os.makedirs(os.path.dirname(_CACHE_FILE), exist_ok=True)
+        data = {"updated_at": datetime.utcnow().isoformat(), "tickers": results}
+        with open(_CACHE_FILE, "w") as f:
+            _json.dump(data, f, default=str)
+    except Exception as e:
+        print(f"[CACHE] Save error: {e}")
+
+
+def load_warm_cache() -> list[dict]:
+    """Load last-good ticker data from disk. Returns [] if no cache."""
+    try:
+        if not os.path.exists(_CACHE_FILE):
+            return []
+        with open(_CACHE_FILE) as f:
+            data = _json.load(f)
+        age_str = data.get("updated_at", "")
+        tickers = data.get("tickers", [])
+        if tickers:
+            print(f"[CACHE] Loaded {len(tickers)} tickers from warm cache (updated: {age_str})")
+        return tickers
+    except Exception as e:
+        print(f"[CACHE] Load error: {e}")
+        return []
 
 URANIUM_RSS_FEEDS = [
     ("https://news.google.com/rss/search?q=uranium+nuclear+energy&hl=en-US&gl=US&ceid=US:en", "Google News"),
@@ -93,6 +126,10 @@ def refresh_all_tickers():
             save_ticker_meta(result)
             save_score_snapshot(result)
             results.append(result)
+    
+    # Save warm cache for instant restarts
+    if results:
+        save_warm_cache(results)
     
     return results
 

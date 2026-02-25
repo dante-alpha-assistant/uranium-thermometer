@@ -38,13 +38,13 @@ export default function RelativeStrength() {
   const tickInterval = Math.max(0, Math.floor(chartData.length / 6) - 1);
 
   return (
-    <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
+    <div className="u-card p-6">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-bold text-white">📊 Relative Strength</h3>
+        <h3 className="text-sm font-semibold text-zinc-200">📊 Relative Strength</h3>
         <div className="flex gap-2">
           {['7d', '14d', '30d'].map(p => (
             <button key={p} onClick={() => setPeriod(p)}
-              className={`px-3 py-1 rounded text-xs font-mono ${period === p ? 'bg-emerald-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}>
+              className={`px-3 py-1 rounded text-xs font-mono ${period === p ? 'bg-emerald-600 text-zinc-100' : 'bg-zinc-800 text-zinc-300 hover:bg-gray-700'}`}>
               {p}
             </button>
           ))}

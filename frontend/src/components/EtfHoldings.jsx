@@ -9,21 +9,16 @@ export default function EtfHoldings() {
 
   if (!data?.holdings?.length) return null
 
-  const concColor = data.concentration === 'HIGH' ? 'text-amber-400 bg-amber-900/30' :
-    data.concentration === 'MODERATE' ? 'text-yellow-400 bg-yellow-900/30' : 'text-emerald-400 bg-emerald-900/30'
-
   return (
-    <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
+    <div className="u-card p-6">
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="text-lg font-bold text-white">📊 URA ETF Holdings</h3>
           <p className="text-xs text-gray-500 mt-0.5">{data.source} · {data.last_updated}</p>
         </div>
         <div className="text-right">
-          <span className={`text-xs font-bold px-3 py-1 rounded-full ${concColor}`}>
-            {data.concentration} CONCENTRATION
-          </span>
-          <p className="text-xs text-gray-500 mt-1">Top 10 = {data.top10_weight_pct}%</p>
+          <span className="text-xs font-mono text-zinc-400">{data.concentration}</span>
+          <p className="text-[10px] text-zinc-400 mt-0.5">Top 10 = {data.top10_weight_pct}%</p>
         </div>
       </div>
 

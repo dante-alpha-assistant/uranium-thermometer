@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 
-const TICKERS = ['URA', 'CCJ', 'UEC', 'UUUU', 'DNN', 'NXE', 'KAP.IL'];
+const TICKERS = ['URA', 'CCJ', 'UEC', 'UUUU', 'DNN', 'NXE', 'OKLO', 'LEU', 'KAP.IL', 'PDN.AX', 'U-UN.TO'];
 
 // --- Waterfall Chart ---
 function WaterfallChart({ adjustments, baseDrift, adjustedDrift, baseVol, adjustedVol }) {

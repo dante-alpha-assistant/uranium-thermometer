@@ -1,74 +1,75 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react'
 
-const regimeColors = {
-  FAVORABLE: { bg: 'bg-emerald-900/30', border: 'border-emerald-500', text: 'text-emerald-400', label: '🟢 FAVORABLE' },
-  NEUTRAL: { bg: 'bg-yellow-900/30', border: 'border-yellow-500', text: 'text-yellow-400', label: '🟡 NEUTRAL' },
-  HOSTILE: { bg: 'bg-red-900/30', border: 'border-red-500', text: 'text-red-400', label: '🔴 HOSTILE' },
-};
+const indicatorMeta = {
+  '^TNX': { label: '10Y Yield', unit: '%', context: { TAILWIND: 'falling = tailwind for risk assets', HEADWIND: 'rising = headwind for risk assets', NEUTRAL: 'stable = neutral' } },
+  'DX-Y.NYB': { label: 'Dollar (DXY)', unit: '', context: { TAILWIND: 'weakening = tailwind for commodities', HEADWIND: 'strengthening = headwind for commodities', NEUTRAL: 'stable = neutral' } },
+  '^GSPC': { label: 'S&P 500', unit: '', context: { TAILWIND: 'rising = risk-on tailwind', HEADWIND: 'falling = risk-off headwind', NEUTRAL: 'flat = neutral' } },
+}
 
-const signalColors = {
-  TAILWIND: 'text-emerald-400',
-  NEUTRAL: 'text-yellow-400',
-  HEADWIND: 'text-red-400',
-};
-
-const indicatorLabels = {
-  '^TNX': { icon: '📊', short: '10Y Yield' },
-  'DX-Y.NYB': { icon: '💵', short: 'Dollar (DXY)' },
-  '^GSPC': { icon: '📈', short: 'S&P 500' },
-};
+function fmtVal(key, val) {
+  if (val == null) return '—'
+  if (key === '^TNX') return `${val.toFixed(2)}%`
+  if (key === 'DX-Y.NYB') return val.toFixed(1)
+  if (key === '^GSPC') return val.toLocaleString(undefined, { maximumFractionDigits: 0 })
+  return String(val)
+}
 
 export default function MacroRegime() {
-  const [data, setData] = useState(null);
+  const [data, setData] = useState(null)
+  useEffect(() => { fetch('api/macro-regime').then(r => r.json()).then(setData).catch(() => {}) }, [])
+  if (!data?.indicators) return null
 
-  useEffect(() => {
-    fetch('api/macro-regime')
-      .then(r => r.json())
-      .then(setData)
-      .catch(() => {});
-  }, []);
-
-  if (!data || !data.indicators) return null;
-
-  const style = regimeColors[data.regime] || regimeColors.NEUTRAL;
+  const regimeColor = data.regime === 'FAVORABLE' ? 'var(--green)' : data.regime === 'HOSTILE' ? 'var(--red)' : 'var(--yellow)'
 
   return (
-    <div className={`${style.bg} ${style.border} border rounded-xl p-5`}>
-      <div className="flex items-center justify-between mb-4">
+    <div className="u-card p-5 h-full">
+      <div className="flex items-baseline justify-between mb-5">
         <div>
-          <p className="text-xs text-gray-400 uppercase tracking-widest font-mono">Macro Environment</p>
-          <p className={`text-2xl font-black ${style.text}`}>{style.label}</p>
+          <p className="text-xs uppercase tracking-wider text-zinc-400 mb-1">Macro Environment</p>
+          <div className="flex items-baseline gap-2">
+            <span className="text-xl font-black" style={{ color: regimeColor }}>{data.regime}</span>
+            <span className="text-lg font-mono font-bold text-zinc-300">{data.score}<span className="text-xs text-zinc-500">/100</span></span>
+          </div>
         </div>
-        <div className="text-right">
-          <p className="text-xs text-gray-400">Regime Score</p>
-          <p className={`text-2xl font-mono font-bold ${style.text}`}>{data.score}</p>
+        <div className="text-right text-xs text-zinc-400">
+          <span className="text-emerald-400/70">{data.tailwinds}</span> tailwind{data.tailwinds !== 1 ? 's' : ''} · <span className="text-red-400/70">{data.headwinds}</span> headwind{data.headwinds !== 1 ? 's' : ''}
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-3 mb-4">
+      <div className="space-y-4">
         {Object.entries(data.indicators).map(([key, ind]) => {
-          const label = indicatorLabels[key] || { icon: '📌', short: key };
+          const meta = indicatorMeta[key] || { label: key, unit: '', context: {} }
+          const sigColor = ind.signal === 'TAILWIND' ? 'text-emerald-400/70' : ind.signal === 'HEADWIND' ? 'text-red-400/70' : 'text-zinc-400'
+          const contextText = meta.context[ind.signal] || ''
+          const pctRank = ind.percentile_rank
+
           return (
-            <div key={key} className="bg-gray-800/50 rounded-lg p-3">
-              <p className="text-xs text-gray-500">{label.icon} {label.short}</p>
-              <p className="text-lg font-mono font-bold text-white">
-                {key === '^TNX' ? `${ind.current}%` : key === '^GSPC' ? ind.current.toLocaleString() : ind.current}
-              </p>
-              <p className={`text-xs font-mono ${signalColors[ind.signal]}`}>{ind.signal}</p>
-              <div className="mt-1 h-1 bg-gray-700 rounded-full overflow-hidden">
-                <div className="h-full bg-blue-500 rounded-full" style={{ width: `${ind.percentile_rank}%` }} />
+            <div key={key}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-medium text-zinc-300">{meta.label}</span>
+                <span className={`text-xs font-mono font-semibold ${sigColor}`}>{ind.signal}</span>
               </div>
-              <p className="text-[10px] text-gray-600 mt-0.5">P{Math.round(ind.percentile_rank)} of 6mo range</p>
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-sm font-mono font-bold text-zinc-100">{fmtVal(key, ind.current)}</span>
+                {pctRank != null && (
+                  <span className="text-[10px] font-mono text-zinc-500">{pctRank.toFixed(0)}th percentile (6mo)</span>
+                )}
+              </div>
+              {/* Percentile bar */}
+              <div className="h-1 rounded-full overflow-hidden mb-1" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                <div className="h-full rounded-full transition-all" style={{ width: `${pctRank || 50}%`, background: 'var(--accent)', opacity: 0.35 }} />
+              </div>
+              {contextText && (
+                <p className="text-[10px] text-zinc-500 italic">{contextText}</p>
+              )}
             </div>
-          );
+          )
         })}
       </div>
 
-      <p className="text-sm text-gray-400">{data.interpretation}</p>
-      <div className="mt-2 flex gap-3 text-xs text-gray-500">
-        <span>Tailwinds: <span className="text-emerald-400 font-mono">{data.tailwinds}</span></span>
-        <span>Headwinds: <span className="text-red-400 font-mono">{data.headwinds}</span></span>
-      </div>
+      {data.interpretation && (
+        <p className="text-xs text-zinc-400 mt-4 leading-relaxed">{data.interpretation}</p>
+      )}
     </div>
-  );
+  )
 }

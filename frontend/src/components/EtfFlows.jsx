@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 
 const signalStyle = {
-  'STRONG INFLOW': 'bg-emerald-900/40 text-emerald-400',
-  'INFLOW': 'bg-emerald-900/20 text-emerald-400',
-  'NEUTRAL': 'bg-gray-800 text-gray-400',
-  'OUTFLOW': 'bg-red-900/20 text-red-400',
-  'STRONG OUTFLOW': 'bg-red-900/40 text-red-400',
+  'STRONG INFLOW': 'bg-zinc-800/40 text-emerald-400/60',
+  'INFLOW': 'bg-zinc-800/40 text-emerald-400/60',
+  'NEUTRAL': 'bg-zinc-800 text-zinc-300',
+  'OUTFLOW': 'bg-zinc-800/40 text-red-400/60',
+  'STRONG OUTFLOW': 'bg-zinc-800/40 text-red-400/60',
 };
 
 export default function EtfFlows() {
@@ -16,9 +16,9 @@ export default function EtfFlows() {
   if (!data?.etfs?.length) return null;
 
   return (
-    <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
+    <div className="u-card p-6">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-bold text-white">💸 ETF Fund Flows</h3>
+        <h3 className="text-sm font-semibold text-zinc-200">💸 ETF Fund Flows</h3>
         <span className={`text-xs font-mono px-2 py-1 rounded ${signalStyle[data.sector_signal] || ''}`}>
           {data.sector_signal}
         </span>
@@ -29,28 +29,28 @@ export default function EtfFlows() {
           const wk = etf.weekly_volumes || [];
           const maxVol = Math.max(...wk.map(w => w.dollar_volume), 1);
           return (
-            <div key={etf.symbol} className="bg-gray-800/30 rounded-lg p-3">
+            <div key={etf.symbol} className="bg-zinc-800/30 rounded-lg p-3">
               <div className="flex items-center justify-between mb-2">
                 <div>
-                  <span className="font-mono text-sm text-gray-300">{etf.symbol}</span>
-                  <span className="text-xs text-gray-600 ml-2">{etf.name}</span>
+                  <span className="font-mono text-sm text-zinc-200">{etf.symbol}</span>
+                  <span className="text-xs text-zinc-500 ml-2">{etf.name}</span>
                 </div>
                 <span className={`text-xs font-mono px-1.5 py-0.5 rounded ${signalStyle[etf.signal]}`}>
                   {etf.flow_trend_pct > 0 ? '+' : ''}{etf.flow_trend_pct}%
                 </span>
               </div>
-              <div className="grid grid-cols-3 gap-2 mb-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
                 <div className="text-center">
-                  <p className="text-xs text-gray-600">5d avg</p>
-                  <p className="font-mono text-xs text-gray-300">${etf.avg_dollar_vol_5d}M</p>
+                  <p className="text-xs text-zinc-500">5d avg</p>
+                  <p className="font-mono text-xs text-zinc-200">${etf.avg_dollar_vol_5d}M</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-xs text-gray-600">22d avg</p>
-                  <p className="font-mono text-xs text-gray-400">${etf.avg_dollar_vol_22d}M</p>
+                  <p className="text-xs text-zinc-500">22d avg</p>
+                  <p className="font-mono text-xs text-zinc-300">${etf.avg_dollar_vol_22d}M</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-xs text-gray-600">63d avg</p>
-                  <p className="font-mono text-xs text-gray-500">${etf.avg_dollar_vol_63d}M</p>
+                  <p className="text-xs text-zinc-500">63d avg</p>
+                  <p className="font-mono text-xs text-zinc-400">${etf.avg_dollar_vol_63d}M</p>
                 </div>
               </div>
               {wk.length > 2 && (
@@ -67,7 +67,7 @@ export default function EtfFlows() {
           );
         })}
       </div>
-      <p className="text-xs text-gray-600 mt-2">Dollar volume trend: 5d vs 22d avg. Falling volume = money exiting sector.</p>
+      <p className="text-xs text-zinc-500 mt-2">Dollar volume trend: 5d vs 22d avg. Falling volume = money exiting sector.</p>
     </div>
   );
 }

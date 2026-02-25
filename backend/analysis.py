@@ -12,6 +12,10 @@ TICKERS = {
     "UUUU": "Energy Fuels",
     "DNN": "Denison Mines",
     "NXE": "NexGen Energy",
+    "OKLO": "Oklo Inc",
+    "U-UN.TO": "Sprott Physical Uranium Trust",
+    "PDN.AX": "Paladin Energy",
+    "LEU": "Centrus Energy",
 }
 
 
