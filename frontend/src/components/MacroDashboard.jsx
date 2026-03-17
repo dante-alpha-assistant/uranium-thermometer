@@ -6,7 +6,7 @@ export default function MacroDashboard() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('/api/macro-dashboard')
+    fetch('api/macro-dashboard')
       .then(r => r.json())
       .then(d => { setData(d); setLoading(false) })
       .catch(() => setLoading(false))

@@ -21,8 +21,8 @@ export default function PortfolioPerformance() {
 
   useEffect(() => {
     Promise.all([
-      fetch('/api/portfolio/performance').then(r => r.json()),
-      fetch('/api/portfolio/attribution').then(r => r.json()),
+      fetch('api/portfolio/performance').then(r => r.json()),
+      fetch('api/portfolio/attribution').then(r => r.json()),
     ]).then(([p, a]) => {
       setPerf(p); setAttr(a); setLoading(false)
     }).catch(() => setLoading(false))

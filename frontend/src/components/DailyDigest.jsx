@@ -7,7 +7,7 @@ export default function DailyDigest() {
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    fetch('/api/daily-digest')
+    fetch('api/daily-digest')
       .then(r => r.json())
       .then(d => { setData(d); setLoading(false) })
       .catch(e => { setError(e.message); setLoading(false) })

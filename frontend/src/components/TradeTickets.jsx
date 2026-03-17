@@ -8,7 +8,7 @@ export default function TradeTickets() {
   const [sortDir, setSortDir] = useState('desc')
 
   useEffect(() => {
-    fetch('/api/trade-tickets')
+    fetch('api/trade-tickets')
       .then(r => r.json())
       .then(d => { setData(d); setLoading(false) })
       .catch(() => setLoading(false))

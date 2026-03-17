@@ -479,7 +479,7 @@ def get_thermometer():
         elif news_sentiment == "BEARISH" and action in ("BUY", "ACCUMULATE"):
             detail += f" {macro_text} Sentiment bearish ({bearish_news} articles) — accumulate cautiously, watch for catalyst."
         elif news_sentiment == "BULLISH" and action in ("BUY", "ACCUMULATE"):
-            detail += f" {macro_text} Sentiment confirms ({bullish_news} bullish articles) — conviction is high."
+            detail += f" {macro_text} Sentiment confirms ({bullish_news} bullish articles) — conviction is {conviction.lower()}."
         elif news_sentiment == "BEARISH" and action in ("REDUCE", "SELL"):
             detail += f" {macro_text} Sentiment confirms ({bearish_news} bearish articles) — exit decisively."
         else:
