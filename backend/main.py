@@ -11596,49 +11596,92 @@ Produce your analysis in this exact JSON structure:
 
 Return ONLY valid JSON, no markdown, no code fences."""
 
-    try:
-        openrouter_key = os.environ.get("OPENROUTER_API_KEY", "")
-        resp = httpx.post(
-            "https://openrouter.ai/api/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {openrouter_key}",
-                "Content-Type": "application/json",
-                "HTTP-Referer": "http://165.22.252.79/uranium/",
-                "X-Title": "Uranium Thermometer",
-            },
-            json={
-                "model": "anthropic/claude-opus-4-6",
-                "max_tokens": 3000,
-                "temperature": 0.7,
-                "messages": [{"role": "user", "content": prompt}],
-            },
-            timeout=120,
-        )
-        resp.raise_for_status()
-        result = resp.json()
-        text = result["choices"][0]["message"]["content"].strip()
-        # Strip markdown fences if present
+    def _parse_ai_text(text, model_name, n_sources):
+        """Parse AI response text into structured analysis dict."""
+        text = text.strip()
         if text.startswith("```"):
             text = text.split("\n", 1)[1] if "\n" in text else text[3:]
             if text.endswith("```"):
                 text = text[:-3]
             text = text.strip()
         analysis = json.loads(text)
-        analysis["model"] = "claude-opus-4-6"
-        analysis["data_sources"] = len(context_parts)
+        analysis["model"] = model_name
+        analysis["data_sources"] = n_sources
         analysis["cached"] = False
+        return analysis
 
+    def _save_cache(analysis):
+        import time as _time2
         _ai_analysis_cache["data"] = analysis
-        _ai_analysis_cache["ts"] = now
+        _ai_analysis_cache["ts"] = _time2.time()
         try:
             with open(AI_CACHE_FILE, "w") as f:
-                json.dump({"data": analysis, "ts": now}, f)
-        except: pass
-        return analysis
-    except json.JSONDecodeError:
-        return {"error": "AI returned invalid JSON", "raw": text[:500]}
-    except Exception as e:
-        return {"error": f"AI analysis failed: {str(e)}"}
+                json.dump({"data": analysis, "ts": _ai_analysis_cache["ts"]}, f)
+        except:
+            pass
+
+    # --- Try OpenRouter first ---
+    openrouter_key = os.environ.get("OPENROUTER_API_KEY", "")
+    anthropic_key = os.environ.get("ANTHROPIC_API_KEY", ANTHROPIC_API_KEY)
+
+    if openrouter_key:
+        try:
+            resp = httpx.post(
+                "https://openrouter.ai/api/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {openrouter_key}",
+                    "Content-Type": "application/json",
+                    "HTTP-Referer": "http://165.22.252.79/uranium/",
+                    "X-Title": "Uranium Thermometer",
+                },
+                json={
+                    "model": "anthropic/claude-opus-4-6",
+                    "max_tokens": 3000,
+                    "temperature": 0.7,
+                    "messages": [{"role": "user", "content": prompt}],
+                },
+                timeout=120,
+            )
+            resp.raise_for_status()
+            text = resp.json()["choices"][0]["message"]["content"]
+            analysis = _parse_ai_text(text, "claude-opus-4-6 (openrouter)", len(context_parts))
+            _save_cache(analysis)
+            return analysis
+        except json.JSONDecodeError as e:
+            return {"error": "AI returned invalid JSON", "raw": str(e)[:200]}
+        except Exception as e:
+            # OpenRouter failed — fall through to Anthropic direct if key available
+            if not anthropic_key:
+                return {"error": f"AI analysis failed: {str(e)}"}
+
+    # --- Fallback: Anthropic Messages API directly ---
+    if anthropic_key:
+        try:
+            resp = httpx.post(
+                "https://api.anthropic.com/v1/messages",
+                headers={
+                    "x-api-key": anthropic_key,
+                    "anthropic-version": "2023-06-01",
+                    "content-type": "application/json",
+                },
+                json={
+                    "model": "claude-opus-4-5",
+                    "max_tokens": 3000,
+                    "messages": [{"role": "user", "content": prompt}],
+                },
+                timeout=120,
+            )
+            resp.raise_for_status()
+            text = resp.json()["content"][0]["text"]
+            analysis = _parse_ai_text(text, "claude-opus-4-5 (anthropic-direct)", len(context_parts))
+            _save_cache(analysis)
+            return analysis
+        except json.JSONDecodeError as e:
+            return {"error": "AI returned invalid JSON", "raw": str(e)[:200]}
+        except Exception as e:
+            return {"error": f"AI analysis failed (anthropic fallback): {str(e)}"}
+
+    return {"error": "No AI API key configured (OPENROUTER_API_KEY or ANTHROPIC_API_KEY required)"}
 
 
 # --- Anti-Fragile Thesis Data Layer ---
